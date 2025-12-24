@@ -11,9 +11,28 @@ import { Cell, Enemy, Tower, Projectile, FlowDirection, PassiveRocket } from './
 import { calculateFlowField, isPathPossible } from './utils/pathfinding';
 import { initAudio, playShootSound, playDeathSound, playRocketHitSound, setSoundEnabled } from './utils/audio';
 import { GameScene } from './components/GameScene';
+import { MapPreviewScene } from './components/MapPreviewScene';
 import { Canvas } from '@react-three/fiber';
 import { Text } from '@react-three/drei';
 import * as THREE from 'three';
+
+// Available maps configuration
+const AVAILABLE_MAPS = [
+  {
+    id: 'default',
+    name: 'Standard Grid',
+    description: 'Classic tower defense terrain',
+    path: null,
+    thumbnail: null
+  },
+  {
+    id: 'battlefield',
+    name: 'Battlefield',
+    description: 'New war-torn terrain map',
+    path: '/battlefield.glb',
+    thumbnail: null
+  }
+];
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -35,8 +54,10 @@ interface WaveProgress {
 }
 
 export default function App() {
-  const [view, setView] = useState<'menu' | 'playing'>('menu');
-  const [menuSubView, setMenuSubView] = useState<'splash' | 'mode_select'>('splash');
+  const [view, setView] = useState<'menu' | 'playing' | 'map_preview'>('menu');
+  const [menuSubView, setMenuSubView] = useState<'splash' | 'mode_select' | 'map_select'>('splash');
+  const [selectedMapId, setSelectedMapId] = useState<string>('default');
+  const [previewMapPath, setPreviewMapPath] = useState<string | null>(null);
   const [grid, setGrid] = useState<Cell[][]>([]);
   const [money, setMoney] = useState(INITIAL_MONEY);
   const [lives, setLives] = useState(INITIAL_LIVES);
@@ -718,18 +739,19 @@ export default function App() {
             <div className="bg-orange-600 text-white px-4 py-1 text-xs font-black tracking-[0.5em] absolute -bottom-2 right-0 rotate-1 shadow-xl">TACTICAL COMMAND</div> 
           </div>
           
-          {menuSubView === 'splash' ? (
+          {menuSubView === 'splash' && (
             <div className="space-y-6 w-full max-w-sm flex flex-col">
-              <button 
+              <button
                 onClick={() => setMenuSubView('mode_select')}
                 className="group relative w-full py-7 bg-orange-700 hover:bg-orange-600 text-white font-black text-2xl rounded shadow-2xl transition transform active:scale-95 border-b-4 border-orange-900 flex items-center justify-center gap-4 overflow-hidden"
               >
                 <span>DEPLOY TO FRONT</span>
                 <span className="text-3xl opacity-50">⚡</span>
               </button>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setShowLeaderboard(true)} className="py-4 bg-gray-900 border border-gray-800 text-gray-500 hover:text-gray-100 hover:border-gray-600 rounded font-black transition flex items-center justify-center gap-2 uppercase text-xs tracking-widest">Intelligence</button>
+
+              <div className="grid grid-cols-3 gap-4">
+                <button onClick={() => setShowLeaderboard(true)} className="py-4 bg-gray-900 border border-gray-800 text-gray-500 hover:text-gray-100 hover:border-gray-600 rounded font-black transition flex items-center justify-center gap-2 uppercase text-xs tracking-widest">Intel</button>
+                <button onClick={() => setMenuSubView('map_select')} className="py-4 bg-gray-900 border border-gray-800 text-gray-500 hover:text-gray-100 hover:border-gray-600 rounded font-black transition flex items-center justify-center gap-2 uppercase text-xs tracking-widest">View Maps</button>
                 <button onClick={toggleSound} className={`py-4 rounded border font-black transition flex items-center justify-center gap-2 uppercase text-xs tracking-widest ${soundOn ? 'bg-gray-900 border-orange-900/50 text-orange-600' : 'bg-gray-950 border-gray-800 text-gray-600'}`}>
                   {soundOn ? 'Radio On' : 'Radio Off'}
                 </button>
@@ -739,7 +761,9 @@ export default function App() {
                 {isFullscreen ? 'Exit Combat Zone' : 'Full Screen View'}
               </button>
             </div>
-          ) : (
+          )}
+
+          {menuSubView === 'mode_select' && (
             <div className="w-full animate-in fade-in zoom-in duration-300 max-w-3xl">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
                 <div className="bg-gray-900/60 border border-gray-800 p-8 rounded-lg space-y-6 flex flex-col h-full shadow-2xl">
@@ -773,24 +797,92 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-12 flex flex-col items-center gap-8">
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className={`w-6 h-6 border-2 flex items-center justify-center transition-all ${unlimitedCash ? 'border-orange-600 bg-orange-600/20 shadow-[0_0_15px_rgba(234,88,12,0.3)]' : 'border-gray-800 bg-gray-950 hover:border-gray-700'}`}>
                     {unlimitedCash && <div className="w-3 h-3 bg-orange-600 shadow-[0_0_10px_orange]" />}
                   </div>
-                  <input 
-                    type="checkbox" 
-                    className="hidden" 
-                    checked={unlimitedCash} 
-                    onChange={() => setUnlimitedCash(!unlimitedCash)} 
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={unlimitedCash}
+                    onChange={() => setUnlimitedCash(!unlimitedCash)}
                   />
                   <span className={`text-[10px] font-black uppercase tracking-[0.3em] transition-colors ${unlimitedCash ? 'text-orange-500' : 'text-gray-600 group-hover:text-gray-400'}`}>
                     Unlimited Cash Flow
                   </span>
                 </label>
 
-                <button 
+                <button
+                  onClick={() => setMenuSubView('splash')}
+                  className="px-10 py-3 bg-gray-950 border border-gray-900 text-gray-700 hover:text-gray-300 hover:border-gray-700 rounded-full font-black transition flex items-center gap-3 uppercase text-[10px] tracking-[0.3em]"
+                >
+                  <span>⬅</span>
+                  <span>Return to HQ</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {menuSubView === 'map_select' && (
+            <div className="w-full animate-in fade-in zoom-in duration-300 max-w-2xl">
+              <div className="bg-gray-900/60 border border-gray-800 p-8 rounded-lg shadow-2xl">
+                <div className="space-y-2 text-left mb-6">
+                  <h2 className="text-xl font-black text-orange-600 uppercase tracking-widest italic">Terrain Recon</h2>
+                  <p className="text-[10px] text-gray-500 uppercase font-bold leading-tight">Preview available battlefields and terrain configurations.</p>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {AVAILABLE_MAPS.map(map => (
+                    <div
+                      key={map.id}
+                      className={`p-5 rounded border-2 transition-all flex justify-between items-center ${
+                        selectedMapId === map.id
+                          ? 'border-orange-600 bg-orange-600/10'
+                          : 'border-gray-800 bg-gray-950/60 hover:bg-gray-800 hover:border-gray-700'
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-base font-black uppercase tracking-tighter text-gray-200">{map.name}</span>
+                        <span className="text-[9px] text-gray-500 uppercase font-bold">{map.description}</span>
+                      </div>
+                      <div className="flex gap-2">
+                        {map.path && (
+                          <button
+                            onClick={() => {
+                              setPreviewMapPath(map.path);
+                              setView('map_preview');
+                            }}
+                            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-[10px] font-black uppercase tracking-widest border border-gray-700"
+                          >
+                            Preview
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setSelectedMapId(map.id)}
+                          className={`px-4 py-2 rounded text-[10px] font-black uppercase tracking-widest border ${
+                            selectedMapId === map.id
+                              ? 'bg-orange-700 text-white border-orange-600'
+                              : 'bg-gray-900 text-gray-500 border-gray-800 hover:bg-gray-800 hover:text-gray-300'
+                          }`}
+                        >
+                          {selectedMapId === map.id ? 'Selected' : 'Select'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 p-4 bg-gray-950 rounded border border-gray-900">
+                  <p className="text-[9px] text-gray-600 uppercase font-bold text-center">
+                    Note: Map selection for gameplay coming soon. Preview maps now!
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-center">
+                <button
                   onClick={() => setMenuSubView('splash')}
                   className="px-10 py-3 bg-gray-950 border border-gray-900 text-gray-700 hover:text-gray-300 hover:border-gray-700 rounded-full font-black transition flex items-center gap-3 uppercase text-[10px] tracking-[0.3em]"
                 >
@@ -825,6 +917,59 @@ export default function App() {
             </div>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // Map Preview View
+  if (view === 'map_preview' && previewMapPath) {
+    return (
+      <div className="h-screen w-full bg-[#121416] relative overflow-hidden">
+        {/* Header */}
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-[#121416]/90 border-b border-gray-800 backdrop-blur-md">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => {
+                setView('menu');
+                setPreviewMapPath(null);
+              }}
+              className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-gray-400 rounded border border-gray-800 text-[10px] font-black uppercase tracking-widest transition-colors flex items-center gap-2"
+            >
+              <span>⬅</span>
+              <span>Back</span>
+            </button>
+            <div className="flex flex-col">
+              <h1 className="text-lg font-black italic leading-none text-gray-100 uppercase tracking-tighter">Map Preview</h1>
+              <span className="text-[8px] text-orange-700 font-black tracking-[0.4em] uppercase">
+                {AVAILABLE_MAPS.find(m => m.path === previewMapPath)?.name || 'Unknown Map'}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={toggleFullscreen}
+              className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-gray-400 rounded border border-gray-800 text-[10px] font-black uppercase tracking-widest transition-colors"
+            >
+              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+            </button>
+          </div>
+        </div>
+
+        {/* Controls Help */}
+        <div className="absolute bottom-6 left-6 z-50 bg-gray-900/80 p-4 rounded border border-gray-800 backdrop-blur-sm">
+          <div className="text-[9px] text-gray-500 uppercase font-bold tracking-widest space-y-1">
+            <div><span className="text-gray-400">Left Click + Drag:</span> Rotate</div>
+            <div><span className="text-gray-400">Right Click + Drag:</span> Pan</div>
+            <div><span className="text-gray-400">Scroll:</span> Zoom</div>
+          </div>
+        </div>
+
+        {/* 3D Canvas */}
+        <Canvas shadows camera={{ position: [20, 20, 20], fov: 50 }}>
+          <Suspense fallback={<Text color="white">Loading Map...</Text>}>
+            <MapPreviewScene mapPath={previewMapPath} />
+          </Suspense>
+        </Canvas>
       </div>
     );
   }
