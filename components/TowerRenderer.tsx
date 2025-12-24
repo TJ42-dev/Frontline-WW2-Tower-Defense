@@ -17,7 +17,7 @@ interface TowerRendererProps {
 }
 
 export const MissileBody = ({ color = '#7c3f00' }: { color?: string }) => {
-  const { scene } = useGLTF('./towers/rockets.glb');
+  const { scene } = useGLTF('./towers/rocket_tower.glb');
   
   const clone = useMemo(() => {
       const c = scene.clone();
@@ -56,7 +56,7 @@ export const TowerRenderer: React.FC<TowerRendererProps> = ({ tower, isSelected 
     // Load Models using relative paths
     const mg42 = useGLTF('./towers/mg42.glb');
     const m45 = useGLTF('./towers/m45.glb');
-    const rocketTower = useGLTF('./towers/rocket_tower.glb');
+    const rocketTower = useGLTF('./towers/rockets.glb');
 
     // Clone scenes to allow multiple instances
     const mg42Scene = useMemo(() => mg42.scene.clone(), [mg42.scene]);
