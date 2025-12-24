@@ -5,11 +5,11 @@ import { TOWER_STATS, TowerType } from '../constants';
 import { useGLTF, Center } from '@react-three/drei';
 import * as THREE from 'three';
 
-// Preload models
-useGLTF.preload('/towers/mg42.glb');
-useGLTF.preload('/towers/m45.glb');
-useGLTF.preload('/towers/rocket_tower.glb');
-useGLTF.preload('/towers/rockets.glb');
+// Preload models using relative paths
+useGLTF.preload('./towers/mg42.glb');
+useGLTF.preload('./towers/m45.glb');
+useGLTF.preload('./towers/rocket_tower.glb');
+useGLTF.preload('./towers/rockets.glb');
 
 interface TowerRendererProps {
   tower: Tower;
@@ -17,7 +17,7 @@ interface TowerRendererProps {
 }
 
 export const MissileBody = ({ color = '#7c3f00' }: { color?: string }) => {
-  const { scene } = useGLTF('/towers/rockets.glb');
+  const { scene } = useGLTF('./towers/rockets.glb');
   
   const clone = useMemo(() => {
       const c = scene.clone();
@@ -53,10 +53,10 @@ export const TowerRenderer: React.FC<TowerRendererProps> = ({ tower, isSelected 
     // Range ring calculation (visual only)
     const rangeVal = stats.range; 
     
-    // Load Models
-    const mg42 = useGLTF('/towers/mg42.glb');
-    const m45 = useGLTF('/towers/m45.glb');
-    const rocketTower = useGLTF('/towers/rocket_tower.glb');
+    // Load Models using relative paths
+    const mg42 = useGLTF('./towers/mg42.glb');
+    const m45 = useGLTF('./towers/m45.glb');
+    const rocketTower = useGLTF('./towers/rocket_tower.glb');
 
     // Clone scenes to allow multiple instances
     const mg42Scene = useMemo(() => mg42.scene.clone(), [mg42.scene]);

@@ -19,13 +19,14 @@ export const initAudio = () => {
   
   // Attempt to load custom sound files
   // Place these files in your public/root directory under /sounds/
-  loadSound('rocket_fire', '/sounds/rocket_fire.wav');
-  loadSound('rocket_hit', '/sounds/rocket_hit.wav');
-  loadSound('sniper_fire', '/sounds/sniper_fire.wav');
-  loadSound('tesla_fire', '/sounds/tesla_fire.wav');
-  loadSound('turret_fire', '/sounds/turret_fire.wav');
-  loadSound('m45_fire', '/sounds/m45_fire.wav');
-  loadSound('mg42_fire', '/sounds/mg42_fire.wav');
+  // Note: Using relative paths for GitHub Pages compatibility
+  loadSound('rocket_fire', './sounds/rocket_fire.wav');
+  loadSound('rocket_hit', './sounds/rocket_hit.wav');
+  loadSound('sniper_fire', './sounds/sniper_fire.wav');
+  loadSound('tesla_fire', './sounds/tesla_fire.wav');
+  loadSound('turret_fire', './sounds/turret_fire.wav');
+  loadSound('m45_fire', './sounds/m45_fire.wav');
+  loadSound('mg42_fire', './sounds/mg42_fire.wav');
 };
 
 const loadSound = async (key: string, url: string) => {
