@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { Cell, Enemy, Projectile, Tower, PassiveRocket } from '../types';
 import { GRID_WIDTH, GRID_HEIGHT, ENEMY_STATS, START_POS, END_POS, EnemyType } from '../constants';
 import { TowerRenderer, MissileBody } from './TowerRenderer';
+import { BattlefieldMap } from './BattlefieldMap';
 
 interface GameSceneProps {
     grid: Cell[][];
@@ -152,6 +153,12 @@ export const GameScene: React.FC<GameSceneProps> = ({
                 <meshStandardMaterial color="#0a0c0e" roughness={0.8} />
             </mesh>
 
+            {/* Battlefield Map - positioned at center, scaled to fit grid */}
+            <BattlefieldMap
+                position={[0, 0, 0]}
+                scale={1}
+            />
+
             <group position={[-GRID_WIDTH / 2, 0, -GRID_HEIGHT / 2]}>
                 {/* GRID */}
                 {grid.map((col: Cell[], x: number) => col.map((cell: Cell, y: number) => {
@@ -180,11 +187,12 @@ export const GameScene: React.FC<GameSceneProps> = ({
                                 }}
                             >
                                 <planeGeometry args={[0.95, 0.95]} />
-                                <meshStandardMaterial 
-                                    color={isStart ? '#15803d' : isEnd ? '#b91c1c' : cell.isWall ? '#000000' : '#1f2937'} 
-                                    opacity={cell.isWall ? 0 : 0.6}
+                                <meshStandardMaterial
+                                    color={isStart ? '#15803d' : isEnd ? '#b91c1c' : cell.isWall ? '#000000' : '#1f2937'}
+                                    opacity={cell.isWall ? 0 : 0.25}
                                     transparent
                                     roughness={0.8}
+                                    depthWrite={false}
                                 />
                             </mesh>
                             
