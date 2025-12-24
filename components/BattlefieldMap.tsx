@@ -14,6 +14,7 @@ const BattlefieldMapModel: React.FC<BattlefieldMapProps> = ({
   const { scene } = useGLTF('./maps/battlefield.glb');
 
   const clonedScene = useMemo(() => {
+    if (!scene) return null;
     const clone = scene.clone();
     clone.traverse((child: any) => {
       if (child.isMesh) {
@@ -27,6 +28,8 @@ const BattlefieldMapModel: React.FC<BattlefieldMapProps> = ({
     return clone;
   }, [scene]);
 
+  if (!clonedScene) return null;
+
   return (
     <group position={position}>
       <primitive
@@ -37,10 +40,38 @@ const BattlefieldMapModel: React.FC<BattlefieldMapProps> = ({
   );
 };
 
+// Error boundary for the map - renders nothing if map fails to load
+class MapErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.warn('BattlefieldMap failed to load:', error.message);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
 export const BattlefieldMap: React.FC<BattlefieldMapProps> = (props) => {
   return (
-    <Suspense fallback={null}>
-      <BattlefieldMapModel {...props} />
-    </Suspense>
+    <MapErrorBoundary>
+      <Suspense fallback={null}>
+        <BattlefieldMapModel {...props} />
+      </Suspense>
+    </MapErrorBoundary>
   );
 };
